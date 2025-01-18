@@ -9,4 +9,13 @@ void GPIO_12vPower_Ctrl(const unsigned char status);
 void GPIO_3v3Power_Init(void);
 void GPIO_3v3Power_Ctrl(const unsigned char status);
 
+// status LED 
+void GPIO_4GModule_RS485_StatusLED_Init(void);
+void GPIO_4GModule_StatusLED_Ctrl(const unsigned char status);
+void GPIO_RS485_StatusLED_Ctrl(const unsigned char status);
+
+/* WatchDog Pins: PB1-WD-WAKE, PB8-WD-DONE, RESET */
+void GPIO_WatchDog_Init(void);
+void WatchDog_Feed(void);
+
 #endif	/* __DRV_GPIO_H */

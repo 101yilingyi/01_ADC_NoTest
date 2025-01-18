@@ -14,3 +14,14 @@
    int ADC1_Init(void);
    float ADC_InputGet(void);
    ```
+
+2. `WatchDog`驱动程序（未实现）
+
+   ```c
+   void GPIO_WatchDog_Init(void);
+   void WatchDog_Feed(void);
+   ```
+
+   `EXTI`优先级与`HAL_Delay`冲突
+
+3. 

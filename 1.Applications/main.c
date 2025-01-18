@@ -16,7 +16,9 @@ void test(void *param)
 		i++;
 		float Voltage = ADC1_GetVoltage();
 		printf("Voltage is %f\r", Voltage);
-		vTaskDelay(1);
+		GPIO_4GModule_StatusLED_Ctrl(0);
+		GPIO_RS485_StatusLED_Ctrl(0);
+		vTaskDelay(1000);
 	}
 }
 
@@ -26,6 +28,8 @@ int main(void)
 	void SystemClock_Config(void);
 	GPIO_12vPower_Init();
 	GPIO_3v3Power_Init();
+	GPIO_4GModule_RS485_StatusLED_Init();
+	
 	ADC1_Init();
 	
 	xTaskCreate(test, "test", 128, NULL, 1, NULL);
