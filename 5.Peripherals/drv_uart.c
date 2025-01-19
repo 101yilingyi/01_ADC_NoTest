@@ -1,51 +1,10 @@
 #include "drv_uart.h"
 #include "stm32f1xx_hal.h"
 #include "RingBuffer.h"
-#include <stdio.h>
 
-static UART_HandleTypeDef huart1;
-//static UART_HandleTypeDef huart2;
 static UART_HandleTypeDef huart3;
-
-//static volatile unsigned char gRxData2 = 0;
 static volatile unsigned char gRxData3 = 0;
-
-//static RingBuffer *pBuffer2 = NULL;
 static RingBuffer *pBuffer3 = NULL;
-
-
-// RS232, 串口输出
-int Drv_USART1_Init(void)
-{
-	huart1.Instance = USART1;
-    huart1.Init.BaudRate = 115200;
-    huart1.Init.WordLength = UART_WORDLENGTH_8B;
-    huart1.Init.StopBits = UART_STOPBITS_1;
-    huart1.Init.Parity = UART_PARITY_NONE;
-    huart1.Init.Mode = UART_MODE_TX_RX;
-    huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-    huart1.Init.OverSampling = UART_OVERSAMPLING_16;
-    if (HAL_UART_Init(&huart1) != HAL_OK){
-        return -1;
-    }
-    return 0;
-}
-
-// printf 重定义
-struct __FILE{
-    int handle;
-};
-
-FILE __stdout;
-
-int fputc(int ch, FILE* f)
-{
-    if(HAL_UART_Transmit(&huart1, (unsigned char*)&ch, 1, HAL_MAX_DELAY) != HAL_OK)
-    {
-        return 0;
-    }
-    return ch;
-}
 
 // RS485
 int Drv_USART3_Init(void)
@@ -90,7 +49,6 @@ void UART3_IRQHandler(void)
 {
 	HAL_UART_IRQHandler(&huart3);
 }
-
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {}
