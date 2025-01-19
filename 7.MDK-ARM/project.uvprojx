@@ -336,7 +336,7 @@
               <MiscControls></MiscControls>
               <Define>STM32F103xE,USE_HAL_DRIVER</Define>
               <Undefine></Undefine>
-              <IncludePath>..\1.Applications;..\2.Protocols;..\3.Middlewares;..\4.Modules;..\5.Peripherals;..\6.HAL_Driver;..\6.HAL_Driver\CMSIS\Include;..\6.HAL_Driver\STM32F1xx_HAL_Driver\Inc;..\6.HAL_Driver\CMSIS;..\3.Middlewares\FreeRTOS\include;..\3.Middlewares\FreeRTOS\portable\RVDS\ARM_CM3;..\3.Middlewares\FreeRTOS;..\3.Middlewares\RingBuffer;..\5.Peripherals\Inc</IncludePath>
+              <IncludePath>..\1.Applications;..\2.Protocols;..\3.Middlewares;..\4.Modules;..\5.Peripherals;..\6.HAL_Driver;..\6.HAL_Driver\CMSIS\Include;..\6.HAL_Driver\STM32F1xx_HAL_Driver\Inc;..\6.HAL_Driver\CMSIS;..\3.Middlewares\FreeRTOS\include;..\3.Middlewares\FreeRTOS\portable\RVDS\ARM_CM3;..\3.Middlewares\FreeRTOS;..\3.Middlewares\RingBuffer;..\5.Peripherals\Inc;..\4.Modules\Inc</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -452,6 +452,13 @@
         </Group>
         <Group>
           <GroupName>4.Modules</GroupName>
+          <Files>
+            <File>
+              <FileName>drv_rs485.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\4.Modules\drv_rs485.c</FilePath>
+            </File>
+          </Files>
         </Group>
         <Group>
           <GroupName>5.Peripherals</GroupName>
@@ -475,6 +482,16 @@
               <FileName>drv_adc.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\5.Peripherals\drv_adc.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_i2c.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\5.Peripherals\drv_i2c.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_uart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\5.Peripherals\drv_uart.c</FilePath>
             </File>
           </Files>
         </Group>

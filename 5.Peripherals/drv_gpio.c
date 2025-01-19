@@ -108,7 +108,24 @@ void WatchDog_Feed(void)	// DONE
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_RESET);
 }
 
+/* RS485: PD10-CON-RS485 */
+void GPIO_RS485_CON_Init(void)
+{
+	GPIO_InitTypeDef GPIO_InitStruct;
+    __HAL_RCC_GPIOD_CLK_ENABLE();
+	
+	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	GPIO_InitStruct.Pin = GPIO_PIN_10;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
+	
+	HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_10, GPIO_PIN_SET); 		// 默认输出高电平, 接收
+}
 
-
-
+/* 0-发送, 1-接收 */
+void GPIO_RS485_CON_Ctrl(const unsigned char status)
+{
+	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_10, (GPIO_PinState)status);
+}
 

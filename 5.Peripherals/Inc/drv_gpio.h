@@ -18,4 +18,7 @@ void GPIO_RS485_StatusLED_Ctrl(const unsigned char status);
 void GPIO_WatchDog_Init(void);
 void WatchDog_Feed(void);
 
+/* RS485 */
+void GPIO_RS485_CON_Init(void);
+void GPIO_RS485_CON_Ctrl(const unsigned char status);
 #endif	/* __DRV_GPIO_H */

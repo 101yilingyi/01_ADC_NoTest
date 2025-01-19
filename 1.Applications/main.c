@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "drv_gpio.h"
 #include "drv_adc.h"
+#include "drv_rs485.h"
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -25,10 +26,11 @@ void test(void *param)
 int main(void)
 {
 	HAL_Init();
-	void SystemClock_Config(void);
+	SystemClock_Config();
 	GPIO_12vPower_Init();
 	GPIO_3v3Power_Init();
 	GPIO_4GModule_RS485_StatusLED_Init();
+	Drv_RS485_Init();
 	
 	ADC1_Init();
 	
