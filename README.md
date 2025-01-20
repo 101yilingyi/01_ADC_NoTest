@@ -26,6 +26,44 @@
 
 3. `RS485`模块更新
 
-   `UART3`, 
+   `UART3`,  不测试
 
    `RTC`的`I2C1`
+
+4. `RTC`驱动
+
+   `GPIO`：`PA0`，
+
+   测试程序，读写`RCT`的寄存器
+
+   ```c
+   int main(void)
+   {
+       HAL_Init();
+       SystemClock_Config();
+       
+       ... // power Init, Status-LED Init, WatchDog Init, WKUP_GPIO Init, I2C1 Init
+       unsigned char flagReg = 0x1E;		// Flag Register Address	
+       unsigned char flag = 1;
+       // 读操作(两步: Slave addr, Register addr, Slave addr, Data)
+       drv_i2c1_write(0x64, &flagReg, 1);	// Slave address, Register address
+       drv_i2c1_read(0x64, &flag, 1);
+       
+       // 写操作, 写 Control Register 的 Stop 位
+       unsigned char CtrlReg = 0x1F;
+       flag = 0;
+       drv_i2c1_write(0x64, &CtrlReg, 1);
+       drv_i2c1_read(0x64, &flag, 1);	// 读
+       
+       unsigned char stop = ctrl & 0x01;
+       HAL_Delay(2000);
+       unsigned char data[2] = {0x1F, 0x01};
+       drv_i2c1_write(0x64, data, 2);
+       
+       drv_i2c1_write(0x64, &CtrlReg, 1);
+       drv_i2c1_read(0x64, &flag, 1);	// 读
+       ...
+   }
+   ```
+
+   

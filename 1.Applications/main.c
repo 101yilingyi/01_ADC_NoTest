@@ -3,6 +3,7 @@
 #include "drv_gpio.h"
 #include "drv_adc.h"
 #include "drv_rs485.h"
+#include "drv_i2c.h"
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -31,6 +32,8 @@ int main(void)
 	GPIO_3v3Power_Init();
 	GPIO_4GModule_RS485_StatusLED_Init();
 	Drv_RS485_Init();
+	Drv_I2C1_Init();	// RTC
+	GPIO_RTC_WKUP_Init();
 	
 	ADC1_Init();
 	

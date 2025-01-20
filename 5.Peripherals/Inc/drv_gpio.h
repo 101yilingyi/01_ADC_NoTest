@@ -21,4 +21,8 @@ void WatchDog_Feed(void);
 /* RS485 */
 void GPIO_RS485_CON_Init(void);
 void GPIO_RS485_CON_Ctrl(const unsigned char status);
+
+/* RTC */
+void GPIO_RTC_WKUP_Init(void);
+
 #endif	/* __DRV_GPIO_H */

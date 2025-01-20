@@ -129,3 +129,31 @@ void GPIO_RS485_CON_Ctrl(const unsigned char status)
 	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_10, (GPIO_PinState)status);
 }
 
+/* RTC GPIO 驱动
+ * /INT:PA0-WKUP, 当 RX8111CE 检测带定时器、闹钟等事件, 会拉低此引脚
+ */
+void GPIO_RTC_WKUP_Init(void)
+{
+	GPIO_InitTypeDef GPIO_InitStruct;
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+	
+	GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+	GPIO_InitStruct.Pin = GPIO_PIN_0;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
+	
+	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+	
+	HAL_NVIC_SetPriority(EXTI0_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+}
+
+void EXTI0_IRQHandler(void)
+{
+    if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_0) != 0x00u){
+        __HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_0);
+        // 从低功耗模式唤醒后的动作
+    }
+}
+
+
