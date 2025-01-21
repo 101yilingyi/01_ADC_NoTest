@@ -4,6 +4,7 @@
 #include "drv_adc.h"
 #include "drv_rs485.h"
 #include "drv_i2c.h"
+#include "drv_uart.h"
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -34,8 +35,11 @@ int main(void)
 	Drv_RS485_Init();
 	Drv_I2C1_Init();	// RTC
 	GPIO_RTC_WKUP_Init();
+	Drv_USART1_Init();	// RS232
 	
 	ADC1_Init();
+	
+	printf("Hello World!\r\n");		// RS232 ´®¿Ú²âÊÔ
 	
 	xTaskCreate(test, "test", 128, NULL, 1, NULL);
 	

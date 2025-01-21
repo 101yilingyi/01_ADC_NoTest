@@ -129,6 +129,28 @@ void GPIO_RS485_CON_Ctrl(const unsigned char status)
 	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_10, (GPIO_PinState)status);
 }
 
+/* PA11: 通信方式选择 */
+void GPIO_CommunicationMode_Init(void)
+{
+	GPIO_InitTypeDef GPIO_InitStruct;
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+	
+	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	GPIO_InitStruct.Pin = GPIO_PIN_11;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
+	
+	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_11, GPIO_PIN_SET);	
+}
+
+/* 1-RS485, 0-4G Module */
+void GPIO_CommunicationMode_Ctrl(const unsigned char status)
+{
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_11, (GPIO_PinState)status);
+}
+
+
 /* RTC GPIO 驱动
  * /INT:PA0-WKUP, 当 RX8111CE 检测带定时器、闹钟等事件, 会拉低此引脚
  */
@@ -156,4 +178,34 @@ void EXTI0_IRQHandler(void)
     }
 }
 
+/* 4G Module: PC1-RESET, PC2-RELOAD */
+void GPIO_4GModule_Init(void)
+{
+	GPIO_InitTypeDef GPIO_InitStruct;
+    __HAL_RCC_GPIOC_CLK_ENABLE();
+	
+	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	GPIO_InitStruct.Pin = GPIO_PIN_1 | GPIO_PIN_2;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
+	
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1 | GPIO_PIN_2, GPIO_PIN_SET);
+	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+}
+
+// PC2-RELOAD, 用来使模块恢复出厂设置
+void GPIO_4GModule_Reload(void)
+{
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_2, GPIO_PIN_RESET);
+	HAL_Delay(5000);
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_2, GPIO_PIN_SET);
+}
+
+// PC1-RESET, 用来重启网络模块
+void GPIO_4GModule_Reset(void)
+{
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_2, GPIO_PIN_RESET);
+	HAL_Delay(50);
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_2, GPIO_PIN_SET);
+}
 

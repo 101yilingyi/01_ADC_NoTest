@@ -458,6 +458,11 @@
               <FileType>1</FileType>
               <FilePath>..\4.Modules\drv_rs485.c</FilePath>
             </File>
+            <File>
+              <FileName>drv_net.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\4.Modules\drv_net.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

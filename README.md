@@ -66,4 +66,15 @@
    }
    ```
 
+5. `4G Module`
+
+   `GPIO`--`Communication Mode`
+
+   `UART2_IT`
+
+   ```c
+   int Drv_4GModule_Init(void);
+   // 4G Module 无 AT 测试
+   ```
+   
    
