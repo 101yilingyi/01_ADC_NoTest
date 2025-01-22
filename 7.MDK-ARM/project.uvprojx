@@ -508,6 +508,11 @@
               <FileType>1</FileType>
               <FilePath>..\5.Peripherals\drv_sw_i2c.c</FilePath>
             </File>
+            <File>
+              <FileName>drv_flash.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\5.Peripherals\drv_flash.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

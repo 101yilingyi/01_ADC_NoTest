@@ -7,6 +7,7 @@
 #include "drv_uart.h"
 #include "drv_net.h"
 #include "drv_vm501.h"
+#include "drv_flash.h"
 
 #include "FreeRTOS.h"
 #include "task.h"
