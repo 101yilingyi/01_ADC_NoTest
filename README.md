@@ -76,5 +76,9 @@
    int Drv_4GModule_Init(void);
    // 4G Module 无 AT 测试
    ```
-   
-   
+
+6. `VM501`测试
+
+   `drv_vm501.c`, `drv_vm501.h`, `drv_sw_i2c.c`文件
+
+   `main.c`中打印`VM501`的一频率

@@ -5,6 +5,8 @@
 #include "drv_rs485.h"
 #include "drv_i2c.h"
 #include "drv_uart.h"
+#include "drv_net.h"
+#include "drv_vm501.h"
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -37,7 +39,13 @@ int main(void)
 	GPIO_RTC_WKUP_Init();
 	Drv_USART1_Init();	// RS232
 	
+	Drv_4GModule_Init();
 	ADC1_Init();
+	Drv_VM501_Init();
+	
+	unsigned short Freq = Drv_VM501_ReadFrequence(1);
+	
+	printf("Frequency is %d\r\n", Freq);
 	
 	printf("Hello World!\r\n");		// RS232 ´®¿Ú²âÊÔ
 	

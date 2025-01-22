@@ -209,3 +209,46 @@ void GPIO_4GModule_Reset(void)
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_2, GPIO_PIN_SET);
 }
 
+// VM501
+static unsigned short gVM501ChannelPins[] = {GPIO_PIN_1, GPIO_PIN_2, GPIO_PIN_3, GPIO_PIN_4, GPIO_PIN_5, GPIO_PIN_14, GPIO_PIN_13, GPIO_PIN_12,
+                                                   GPIO_PIN_5, GPIO_PIN_4, GPIO_PIN_3, GPIO_PIN_2, GPIO_PIN_11, GPIO_PIN_1, GPIO_PIN_0, GPIO_PIN_15};
+static GPIO_TypeDef* gVM501ChannelPorts[] = {GPIOF, GPIOF, GPIOF, GPIOF, GPIOF, GPIOF, GPIOF, GPIOF,
+                                                   GPIOG, GPIOG, GPIOG, GPIOG, GPIOD, GPIOG, GPIOG, GPIOF};
+void GPIO_VM501Channel_Init(void)
+{
+	GPIO_InitTypeDef GPIO_InitStruct;
+    
+    __HAL_RCC_GPIOD_CLK_ENABLE();
+    __HAL_RCC_GPIOF_CLK_ENABLE();
+    __HAL_RCC_GPIOG_CLK_ENABLE();
+    
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_11, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOF, GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5 
+                            | GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOG, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5, GPIO_PIN_RESET);
+    
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
+    
+    GPIO_InitStruct.Pin = GPIO_PIN_11;
+    HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+    
+    GPIO_InitStruct.Pin = GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5 
+                            | GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15;
+    HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
+    
+    GPIO_InitStruct.Pin = GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5;
+    HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
+}
+
+void GPIO_VM501Channel_Enable(const unsigned char channel)
+{
+	HAL_GPIO_WritePin(gVM501ChannelPorts[channel - 1], gVM501ChannelPins[channel - 1], GPIO_PIN_SET);
+
+}
+void GPIO_VM501Channel_Disable(const unsigned char channel)
+{
+	HAL_GPIO_WritePin(gVM501ChannelPorts[channel - 1], gVM501ChannelPins[channel - 1], GPIO_PIN_RESET);
+}
+

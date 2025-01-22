@@ -55,6 +55,7 @@ int Drv_USART2_Init(void)
 	return 0;
 }
 
+// Length ³¤¶È(×Ö½Ú)
 int Drv_USART2_Write(const unsigned char *pData, const unsigned short Length)
 {
 	HAL_StatusTypeDef ret = HAL_UART_Transmit(&huart2, pData, Length, HAL_MAX_DELAY);

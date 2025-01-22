@@ -463,6 +463,11 @@
               <FileType>1</FileType>
               <FilePath>..\4.Modules\drv_net.c</FilePath>
             </File>
+            <File>
+              <FileName>drv_vm501.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\4.Modules\drv_vm501.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -497,6 +502,11 @@
               <FileName>drv_uart.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\5.Peripherals\drv_uart.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_sw_i2c.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\5.Peripherals\drv_sw_i2c.c</FilePath>
             </File>
           </Files>
         </Group>

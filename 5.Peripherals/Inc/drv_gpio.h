@@ -35,4 +35,9 @@ void GPIO_4GModule_Init(void);
 void GPIO_4GModule_Reload(void);
 void GPIO_4GModule_Reset(void);
 
+/* VM501,  */
+void GPIO_VM501Channel_Init(void);
+void GPIO_VM501Channel_Enable(const unsigned char channel);
+void GPIO_VM501Channel_Disable(const unsigned char channel);
+
 #endif	/* __DRV_GPIO_H */
