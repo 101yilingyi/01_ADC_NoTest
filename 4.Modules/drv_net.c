@@ -2,10 +2,18 @@
 #include "stm32f1xx_hal.h"
 #include "drv_uart.h"
 #include "drv_gpio.h"
+#include "drv_config.h"
 
 #include <string.h>
 #include <stdio.h>
-//#include <stdint.h>
+
+#define USE_NET_LOG     (1)
+
+#if USE_NET_LOG
+#define NetLog(fmt, ...)        printf(fmt, ##__VA_ARGS__)
+#else
+#define NetLog(fmt, ...)
+#endif
 
 static unsigned char isCommandMode = 0; // 0-透传模式；1-指令模式`
 
@@ -24,6 +32,7 @@ static int Set_SubscribeTopic(uint8_t subnum, uint8_t suben, int8_t *topic, uint
 static int Set_MQTT_SerialCommunicationMode(unsigned char Mode);
 static int Set_MQTT_Version(unsigned char version);
 static int Set_MQTT_ServerIP(const char *server, unsigned short port);
+static long long Get_MQTT_ClientID(void);
 static int Set_MQTT_ClientID(const char *client);
 static int Set_MQTT_UserName(const char *name);
 static int Set_MQTT_PassWord(const char *password);
@@ -31,24 +40,37 @@ static int Set_MQTT_PassWord(const char *password);
 int Drv_4GModule_Init(void)
 {
 	GPIO_4GModule_Init();
-	Drv_USART2_Init();
-	while(Enter_CommandMode() != 0);
-	Function_WorkMode_Ctrl("MQTT");
-	Set_SerialLength(4096);
-	Set_SerialPacketTime(500);
-	Function_Heart_Ctrl("OFF");
-	Set_PublishTopic(1, 1, "/dev/update", 0, 0);
-	Set_SubscribeTopic(1, 1, "/dev/get", 0);
-	Set_MQTT_SerialCommunicationMode(1);
-	Set_MQTT_Version(3);
-	Set_MQTT_ServerIP("broker.emqx.io", 1883);
+	int ret = Drv_USART2_Init();
+	if(ret < 0)		return ret;
+	GPIO_4GModule_Reset();
+	
 	long long id = Get_IMEI();
-	char idstr[] = {0};
+	char idstr[16] = {0};
 	sprintf(idstr, "%lld", id);
-	Set_MQTT_ClientID(idstr);
-	Set_MQTT_UserName("board");
-	Set_MQTT_PassWord("123456");
-	SaveConfig_and_Reset();
+	
+	while(Enter_CommandMode() != 0);
+	
+	if(Drv_Read_NetConfig() != 0x99 || Get_MQTT_ClientID() != id)
+	{
+		Function_WorkMode_Ctrl("MQTT");
+		Set_SerialLength(4096);
+		Set_SerialPacketTime(500);
+		Function_Heart_Ctrl("OFF");
+		Set_PublishTopic(1, 1, "/dev/update", 0, 0);
+		Set_SubscribeTopic(1, 1, "/dev/get", 0);
+		Set_MQTT_SerialCommunicationMode(1);
+		Set_MQTT_Version(3);
+		Set_MQTT_ServerIP("broker.emqx.io", 1883);
+		
+		Set_MQTT_ClientID(idstr);
+		Set_MQTT_UserName("board");
+		Set_MQTT_PassWord("123456");
+		SaveConfig_and_Reset();
+		Drv_Save_NetConfig();
+	}
+	else{
+		while(Exit_CommandMode() != 0);
+	}
 	return 0;
 }
 
@@ -62,18 +84,23 @@ static int Enter_CommandMode(void)
 	if(ret <= 0)	return -1;
 	
 	HAL_Delay(1000);
+	NetLog("%s", buf);
 	char ack = 0;
 	ret = Drv_USART2_Read((unsigned char *)&ack, 1);				// 接收 a
 	if(ret < 0)		return -1;
-	if(ack == 'a'){
+	NetLog("%c", ack);
+	if(ack == 'a')
+	{
 		ret =  Drv_USART2_Write((unsigned char *)ack, 1);			// 发送 a
 		if(ret < 0)		return -1;
 		
 		memset(buf, 0, strlen(buf));
 		HAL_Delay(1000);
-		ret = Drv_USART2_Read((unsigned char *)&buf, 8);			// 接收 +ok
+		ret = Drv_USART2_Read((unsigned char *)&buf, 3);			// 接收 +ok
 		if(ret < 0)		return -1;
-		if(strcmp(buf, "+ok") == 0){
+		NetLog("%s", buf);
+		if(strcmp(buf, "+ok") == 0)
+		{
 			isCommandMode = 1;
 			return 0;
 		}
@@ -87,13 +114,13 @@ static int Exit_CommandMode(void)
 	int ret = Drv_USART2_Write((unsigned char *)buf, strlen(buf));
 	if(ret < 0)		return -1;
 	
-	HAL_Delay(1000);
+	HAL_Delay(500);
 	memset(buf, 0, strlen(buf));
 	ret = Drv_USART2_Read((unsigned char *)&buf, 16);
 	if(ret < 0)		return -1;
-	if(strstr(buf, "\r\nOK\r\n") == 0){
-		return 0;
+	if(strstr(buf, "\r\nOK\r\n") != 0){
 		isCommandMode = 0;
+		return 0;
 	}
 	return -1;
 }
@@ -103,12 +130,13 @@ static int SaveConfig_and_Reset(void)
 	char buf[16] = "AT+S\r\n";
 	int ret = Drv_USART2_Write((unsigned char *)buf, strlen(buf));
 	if(ret < 0)		return -1;
-	
-	HAL_Delay(500);
+	NetLog("%s", buf);
+	HAL_Delay(2000);
 	memset(buf, 0, strlen(buf));
 	ret = Drv_USART2_Read((unsigned char *)&buf, 16);
 	if(ret < 0)		return -1;
-	if(strcmp(buf, "\r\nOK\r\n") == 0){
+	NetLog("%s", buf);
+	if(strstr(buf, "\r\nOK\r\n") != 0){
 		return 0;
 	}
 	return -1;
@@ -122,12 +150,14 @@ static int Function_ReShow_Ctrl(const char* string)
 	sprintf(buf, "AT+E=%s\r\n", string);
 	int ret = Drv_USART2_Write((unsigned char *)buf, strlen(buf));
 	if(ret < 0)		return -1;
+	NetLog("%s", buf);
 	
-	HAL_Delay(500);
+	HAL_Delay(100);
 	memset(buf, 0, strlen(buf));
 	ret = Drv_USART2_Read((unsigned char *)&buf, 16);
 	if(ret < 0)		return -1;
-	if(strcmp(buf, "\r\nOK\r\n") == 0){
+	NetLog("%s", buf);
+	if(strstr(buf, "\r\nOK\r\n") != 0){
 		return 0;
 	}
 	return -1;
@@ -141,12 +171,14 @@ static int Function_WorkMode_Ctrl(const char* string)
 	sprintf(buf, "AT+WKMOD=%s\r\n", string);
 	int ret = Drv_USART2_Write((unsigned char *)buf, strlen(buf));
 	if(ret < 0)		return -1;
+	NetLog("%s", buf);
 	
-	HAL_Delay(500);
+	HAL_Delay(100);
 	memset(buf, 0, strlen(buf));
 	ret = Drv_USART2_Read((unsigned char *)&buf, 32);
 	if(ret < 0)		return -1;
-	if(strcmp(buf, "\r\nOK\r\n") == 0){
+	NetLog("%s", buf);
+	if(strstr(buf, "\r\nOK\r\n") != 0){
 		return 0;
 	}
 	return -1;
@@ -164,17 +196,17 @@ float Get_SignalStrength(void)
 		while(Exit_CommandMode() != 0);
 		return -1;
 	}
+	NetLog("%s", buf);
 	
 	HAL_Delay(100);
 	memset(buf, 0, strlen(buf));
 	ret = Drv_USART2_Read((unsigned char *)&buf, 16);
+	while(Exit_CommandMode() != 0);
 	if(ret < 0){
-		while(Exit_CommandMode() != 0);
 		return -1;
 	}
-	while(Exit_CommandMode() != 0);
+	NetLog("%s", buf);
 	if(ret < 0)		return -1;
-	if(strstr(buf, "+CSQ:") == NULL)	return -1;
 	char *p = strstr(buf, "+CSQ: ");
 	if(p == NULL)	return -1;
 	p += strlen("+CSQ: ");
@@ -191,26 +223,29 @@ float Get_SignalStrength(void)
 // 查询 IMEI 号
 long long Get_IMEI(void)
 {
+	if(isCommandMode == 0){
+		while(Enter_CommandMode() != 0);
+	}
 	char buf[32] = "AT+IMEI\r\n";
 	int ret = Drv_USART2_Write((unsigned char *)buf, strlen(buf));
 	if(ret < 0){
 		while(Exit_CommandMode() != 0);
 		return -1;
 	}
+	NetLog("%s", buf);
 	
 	HAL_Delay(500);
 	memset(buf, 0, strlen(buf));
 	ret = Drv_USART2_Read((unsigned char *)&buf, 32);
-	if(ret < 0){
-		while(Exit_CommandMode() != 0);
-		return -1;
-	}
 	while(Exit_CommandMode() != 0);
-	char *p = strstr(buf, "+IMEI");
+	if(ret < 0)		return -1;
+	NetLog("%s", buf);
+	
+	char *p = strstr(buf, "+IMEI:");
 	if(p == NULL)	return -1;
-	p += strlen("+IMEI: ");
+	p += strlen("+IMEI:");
 	long long imei = 0;
-	while(*p != 'r')
+	while(*p != '\r')
 	{
 		imei = imei * 10 + *p - '0';
 		p++;
@@ -232,12 +267,14 @@ static int Set_SerialLength(unsigned short len)
 	sprintf(buf, "AT+UARTFL%d\r\n", len);
 	int ret = Drv_USART2_Write((unsigned char *)buf, strlen(buf));
 	if(ret < 0)		return -1;
+	NetLog("%s", buf);
 	
 	HAL_Delay(500);
 	memset(buf, 0, strlen(buf));
 	ret = Drv_USART2_Read((unsigned char *)&buf, 32);
 	if(ret < 0)		return -1;
-	if(strcmp(buf, "\r\nOK\r\n") == 0)  // 收到了正确的指令响应，
+	NetLog("%s", buf);
+	if(strstr(buf, "\r\nOK\r\n") != 0)  // 收到了正确的指令响应，
     {
         return 0;
     }
@@ -252,12 +289,14 @@ static int Set_SerialPacketTime(unsigned short time)
 	sprintf(buf, "AT+UARTFT=%d\r\n", time);
 	int ret = Drv_USART2_Write((unsigned char *)buf, strlen(buf));
 	if(ret < 0)		return -1;
+	NetLog("%s", buf);
 	
 	HAL_Delay(500);
 	memset(buf, 0, strlen(buf));
 	ret = Drv_USART2_Read((unsigned char *)&buf, 16);
 	if(ret < 0)		return -1;
-	if(strcmp(buf, "\r\nOK\r\n") == 0)  // 收到了正确的指令响应，
+	NetLog("%s", buf);
+	if(strstr(buf, "\r\nOK\r\n") != 0)  // 收到了正确的指令响应，
     {
         return 0;
     }
@@ -269,16 +308,18 @@ static int Set_SerialPacketTime(unsigned short time)
 static int Function_Heart_Ctrl(unsigned char *string)
 {
 	if(strcmp(string, "ON") != 0 && strcmp(string, "OFF") != 0)		return -1;
-	char buf[16] = {0};
+	char buf[32] = {0};
 	sprintf(buf, "AT+HEARTEN=%s\r\n", string);
 	int ret = Drv_USART2_Write((unsigned char *)buf, strlen(buf));
 	if(ret < 0)		return -1;
+	NetLog("%s", buf);
 	
-	HAL_Delay(500);
+	HAL_Delay(100);
 	memset(buf, 0, strlen(buf));
-	ret = Drv_USART2_Read((unsigned char *)&buf, 16);
+	ret = Drv_USART2_Read((unsigned char *)&buf, 32);
 	if(ret < 0)		return -1;
-	if(strcmp(buf, "\r\nOK\r\n") == 0){
+	NetLog("%s", buf);
+	if(strstr(buf, "\r\nOK\r\n") != 0){
 		return 0;
 	}
 	return -1;
@@ -294,12 +335,14 @@ static int Set_MQTT_Heart(unsigned short keepalive, unsigned char cleansession)
     sprintf(buf, "AT+MQTTCFG=%d,%d\r\n", keepalive, cleansession);
     int ret = Drv_USART2_Write((unsigned char*)buf, strlen(buf));
     if(ret < 0) return -1;
+	NetLog("%s", buf);
     
-    HAL_Delay(10);      // 等待模块的响应
+    HAL_Delay(100);      // 等待模块的响应
     memset(buf, 0, strlen(buf));
     ret = Drv_USART2_Read((unsigned char*)buf, 32);
     if(ret < 0) return -1;
-    if(strcmp(buf, "\r\nOK\r\n") == 0)  // 收到了正确的指令响应，
+	NetLog("%s", buf);
+    if(strstr(buf, "\r\nOK\r\n") != 0)  // 收到了正确的指令响应，
     {
         return 0;
     }
@@ -319,12 +362,14 @@ static int Set_PublishTopic(uint8_t pubnum, uint8_t puben, const char *topic, ui
 	sprintf(buf, "AT+MQTTPUBTP=%d,%d,%s,%d,%d\r\n", pubnum, puben, topic, qos, retained);
 	int ret = Drv_USART2_Write((unsigned char*)buf, strlen(buf));
     if(ret < 0) return -1;
+	NetLog("%s", buf);
     
-    HAL_Delay(10);      // 等待模块的响应
+    HAL_Delay(100);      // 等待模块的响应
     memset(buf, 0, strlen(buf));
     ret = Drv_USART2_Read((unsigned char*)buf, 64);
     if(ret < 0) return -1;
-    if(strcmp(buf, "\r\nOK\r\n") == 0)  // 收到了正确的指令响应，
+	NetLog("%s", buf);
+    if(strstr(buf, "\r\nOK\r\n") != 0)  // 收到了正确的指令响应，
     {
         return 0;
     }
@@ -338,12 +383,14 @@ static int Set_SubscribeTopic(uint8_t subnum, uint8_t suben, int8_t *topic, uint
 	sprintf(buf, "AT+MQTTSUBTP=%d,%d,%s,%d\r\n", subnum, suben, topic, qos);
 	int ret = Drv_USART2_Write((unsigned char*)buf, strlen(buf));
     if(ret < 0) return -1;
-    
-    HAL_Delay(10);      // 等待模块的响应
+    NetLog("%s", buf);
+	
+    HAL_Delay(100);      // 等待模块的响应
     memset(buf, 0, strlen(buf));
     ret = Drv_USART2_Read((unsigned char*)buf, 64);
     if(ret < 0) return -1;
-    if(strcmp(buf, "\r\nOK\r\n") == 0)  // 收到了正确的指令响应，
+	NetLog("%s", buf);
+    if(strstr(buf, "\r\nOK\r\n") != 0)  // 收到了正确的指令响应，
     {
         return 0;
     }
@@ -380,12 +427,14 @@ static int Set_MQTT_Version(unsigned char version)
 	sprintf(buf, "AT+MQTTVER=%d\r\n", version);
 	int ret = Drv_USART2_Write((unsigned char*)buf, strlen(buf));
     if(ret < 0) return -1;
+	NetLog("%s", buf);
     
-    HAL_Delay(10);      // 等待模块的响应
+    HAL_Delay(100);      // 等待模块的响应
     memset(buf, 0, strlen(buf));
     ret = Drv_USART2_Read((unsigned char*)buf, 16);
     if(ret < 0) return -1;
-    if(strcmp(buf, "\r\nOK\r\n") == 0)  // 收到了正确的指令响应，
+	NetLog("%s", buf);
+    if(strstr(buf, "\r\nOK\r\n") != 0)  // 收到了正确的指令响应，
     {
         return 0;
     }
@@ -398,20 +447,53 @@ static int Set_MQTT_ServerIP(const char *server, unsigned short port)
 	if(server == NULL)		return -1;
 	if(strlen(server) > 128)  return -1;
 	if(port == 0)	return -1;
-	char buf[32] = {0};
+	char buf[256] = {0};
 	sprintf(buf, "AT+MQTTSVR=%s,%d\r\n", server, port);
 	int ret = Drv_USART2_Write((unsigned char*)buf, strlen(buf));
     if(ret < 0) return -1;
-    
-    HAL_Delay(10);      // 等待模块的响应
+    NetLog("%s", buf);
+	
+    HAL_Delay(100);      // 等待模块的响应
     memset(buf, 0, strlen(buf));
     ret = Drv_USART2_Read((unsigned char*)buf, 32);
     if(ret < 0) return -1;
-    if(strcmp(buf, "\r\nOK\r\n") == 0)  // 收到了正确的指令响应，
+	NetLog("%s", buf);
+    if(strstr(buf, "\r\nOK\r\n") != 0)  // 收到了正确的指令响应，
     {
         return 0;
     }
     return -1;
+}
+
+static long long Get_MQTT_ClientID(void)
+{
+	char buf[256] = "AT+MQTTCID\r\n";
+	int ret = Drv_USART2_Write((unsigned char *)buf, strlen(buf));
+	if(ret < 0)		return -1;
+	NetLog("%s", buf);
+	
+	HAL_Delay(100);
+	memset(buf, 0, strlen(buf));
+	ret = Drv_USART2_Read((unsigned char *)buf, 256);
+	if(ret < 0)		return -1;
+	NetLog("%s", buf);
+	if(strstr(buf, "\r\nOK\r\n") != 0)  // 收到了正确的指令响应，
+    {
+        char *p = strstr(buf, "+MQTTCID:");
+        if(NULL == p)
+        {
+            return -1;
+        }
+        p += strlen("+MQTTCID:");
+        long long clientid = 0;
+        while(*p != '\r')
+        {
+            clientid = clientid * 10 + *p - '0';
+            p++;
+        }
+        return clientid;
+    }
+	return -1;
 }
 
 // 设置 MQTT 客户端ID, ID 范围: 1~128
@@ -433,20 +515,22 @@ static int Set_MQTT_ClientID(const char *client)
     }
     return -1;
 }
+
 // 设置 MQTT 客户用户名
 static int Set_MQTT_UserName(const char *name)
 {
 	if(name == NULL || strlen(name) == 128)	return -1;
-	char buf[32] = {0};
+	char buf[256] = {0};
 	sprintf(buf, "AT+MQTTUSER=%s\r\n", name);
 	int ret = Drv_USART2_Write((unsigned char*)buf, strlen(buf));
     if(ret < 0) return -1;
     
-    HAL_Delay(10);      // 等待模块的响应
+    HAL_Delay(100);      // 等待模块的响应
     memset(buf, 0, strlen(buf));
     ret = Drv_USART2_Read((unsigned char*)buf, 32);
     if(ret < 0) return -1;
-    if(strcmp(buf, "\r\nOK\r\n") == 0)  // 收到了正确的指令响应，
+	NetLog("%s", buf);
+    if(strstr(buf, "\r\nOK\r\n") != 0)  // 收到了正确的指令响应，
     {
         return 0;
     }
@@ -461,12 +545,14 @@ static int Set_MQTT_PassWord(const char *password)
 	sprintf(buf, "AT+MQTTPSW=%s\r\n", password);
 	int ret = Drv_USART2_Write((unsigned char*)buf, strlen(buf));
     if(ret < 0) return -1;
+	NetLog("%s", buf);
     
-    HAL_Delay(10);      // 等待模块的响应
+    HAL_Delay(100);      // 等待模块的响应
     memset(buf, 0, strlen(buf));
     ret = Drv_USART2_Read((unsigned char*)buf, 32);
     if(ret < 0) return -1;
-    if(strcmp(buf, "\r\nOK\r\n") == 0)  // 收到了正确的指令响应，
+	NetLog("%s", buf);
+    if(strstr(buf, "\r\nOK\r\n") != 0)  // 收到了正确的指令响应，
     {
         return 0;
     }
@@ -486,13 +572,15 @@ int Get_MQTT_State(void)
 		while(Exit_CommandMode() != 0);
 		return -1;
 	}
+	NetLog("%s", buf);
     
-    HAL_Delay(10);      // 等待模块的响应
+    HAL_Delay(100);      // 等待模块的响应
     memset(buf, 0, strlen(buf));
     ret = Drv_USART2_Read((unsigned char*)buf, 32);
 	while(Exit_CommandMode() != 0);
     if(ret < 0) return -1;
-    if(strstr(buf, "\r\nOK\r\n") == 0)  // 收到了正确的指令响应，
+	NetLog("%s", buf);
+    if(strstr(buf, "\r\nOK\r\n") != 0)  // 收到了正确的指令响应，
     {
 		if(strstr(buf, "+MQTTSTA:\"DISCONNECTION\"") == 0)	return -1;
 		else if(strstr(buf, "+MQTTSTA:\"CONNECTION\"")==0) 	return 0;
@@ -508,8 +596,10 @@ int MQTT_Publish_Msg(unsigned char pubnum, const char* payload)
     sprintf(buf, "%d,", pubnum);
     int ret = Drv_USART2_Write((unsigned char*)buf, strlen(buf));
     if(ret < 0) return ret;
+	NetLog("%s", buf);
     
     ret = Drv_USART2_Read((unsigned char*)payload, strlen(payload));
+	NetLog("%s", payload);
     return ret;
 }
 

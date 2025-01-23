@@ -16,15 +16,25 @@ void SystemClock_Config(void);
 
 void test(void *param)
 {
+    while(Get_MQTT_State() != 0);
 	static unsigned int i = 0; 
 	while(1)
 	{
 		i++;
 		float Voltage = ADC1_GetVoltage();
 		printf("Voltage is %f\r", Voltage);
-		GPIO_4GModule_StatusLED_Ctrl(0);
-		GPIO_RS485_StatusLED_Ctrl(0);
 		vTaskDelay(1000);
+		
+		char buf[64] = {0};
+        int ret = MQTT_Get_Msg((unsigned char*)buf, sizeof(buf));
+        if(ret > 0)
+        {
+            printf("%s", buf);
+        }
+		
+//		GPIO_4GModule_StatusLED_Ctrl(0);
+//		GPIO_RS485_StatusLED_Ctrl(0);
+		vTaskDelay(1);
 	}
 }
 
@@ -35,12 +45,10 @@ int main(void)
 	GPIO_12vPower_Init();
 	GPIO_3v3Power_Init();
 	GPIO_4GModule_RS485_StatusLED_Init();
-	Drv_RS485_Init();
 	Drv_I2C1_Init();	// RTC
 	GPIO_RTC_WKUP_Init();
 	Drv_USART1_Init();	// RS232
 	
-	Drv_4GModule_Init();
 	ADC1_Init();
 	Drv_VM501_Init();
 	
@@ -49,6 +57,18 @@ int main(void)
 	printf("Frequency is %d\r\n", Freq);
 	
 	printf("Hello World!\r\n");		// RS232 ´®¿Ú²âÊÔ
+	
+	unsigned char CommunicationMode = Get_CommunicationMode();
+	if(CommunicationMode == 1)//RS485
+	{
+		Drv_RS485_Init();
+	}
+	else if(CommunicationMode == 0)
+	{
+		Drv_4GModule_Init();
+	}
+	
+	printf("Communicate Mode: %d\r\n", Get_CommunicationMode());
 	
 	xTaskCreate(test, "test", 128, NULL, 1, NULL);
 	

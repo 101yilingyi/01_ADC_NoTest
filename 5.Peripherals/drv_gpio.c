@@ -145,11 +145,11 @@ void GPIO_CommunicationMode_Init(void)
 }
 
 /* 1-RS485, 0-4G Module */
-void GPIO_CommunicationMode_Ctrl(const unsigned char status)
-{
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_11, (GPIO_PinState)status);
-}
 
+unsigned char Get_CommunicationMode(void)
+{
+	return HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_11);
+}
 
 /* RTC GPIO 驱动
  * /INT:PA0-WKUP, 当 RX8111CE 检测带定时器、闹钟等事件, 会拉低此引脚

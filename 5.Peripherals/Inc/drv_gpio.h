@@ -24,7 +24,8 @@ void GPIO_RS485_CON_Ctrl(const unsigned char status);
 
 /* 通信方式选择: 0-RS485, 1-4G Module */
 void GPIO_CommunicationMode_Init(void);
-void GPIO_CommunicationMode_Ctrl(const unsigned char status);
+//void GPIO_CommunicationMode_Ctrl(const unsigned char status);
+unsigned char Get_CommunicationMode(void);
 
 /* RTC, PA0 唤醒引脚 */
 void GPIO_RTC_WKUP_Init(void);

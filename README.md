@@ -82,5 +82,7 @@
    `drv_vm501.c`, `drv_vm501.h`, `drv_sw_i2c.c`文件
 
    `main.c`中打印`VM501`的一频率
-   
+
 7. `Flash`驱动
+
+8. `4G Module`
